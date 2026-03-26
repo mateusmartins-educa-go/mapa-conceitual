@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa Conceitual – Modelo para Estudantes</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600&display=swap');
+
+:root {
+  --azul-esc: #1a2e4a;
+  --azul:     #2563a8;
+  --azul-cl:  #dbeafe;
+  --laranja:  #e07b39;
+  --verde:    #2a7d5c;
+  --roxo:     #7c3aed;
+  --cinza-bd: #94a3b8;
+  --bg:       #f1f5f9;
+  --branco:   #ffffff;
+  --texto:    #1e293b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  background: var(--bg);
+  color: var(--texto);
+  padding: 28px 16px 40px;
+}
+
+.pagina { max-width: 1000px; margin: 0 auto; }
+
+/* ── CABEÇALHO ── */
+.header {
+  background: var(--azul-esc);
+  border-radius: 12px 12px 0 0;
+  padding: 20px 28px 16px;
+  display: flex; align-items: center; gap: 14px;
+  color: white;
+}
+.header-icon {
+  width: 46px; height: 46px; background: var(--laranja);
+  border-radius: 10px; display: flex; align-items: center;
+  justify-content: center; font-size: 22px; flex-shrink: 0;
+}
+.header h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; line-height:1.2; }
+.header p  { font-size: 0.78rem; opacity: .7; margin-top: 3px; }
+
+/* ── IDENTIFICAÇÃO ── */
+.identificacao {
+  background: var(--branco);
+  border-left: 4px solid var(--azul);
+  border-right: 4px solid var(--azul);
+  padding: 14px 28px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 14px;
+}
+.identificacao .full { grid-column: 1 / -1; }
+.campo label {
+  display: block; font-size: .68rem;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: var(--azul); font-weight: 600; margin-bottom: 4px;
+}
+.campo input {
+  width: 100%; border: none;
+  border-bottom: 1.5px solid var(--cinza-bd);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: .9rem; padding: 3px 2px;
+  background: transparent; outline: none;
+  transition: border-color .2s;
+}
+.campo input:focus { border-color: var(--azul); }
+
+/* ── LEGENDA ── */
+.legenda {
+  background: #fffbf0;
+  border-left: 4px solid var(--laranja);
+  border-right: 4px solid var(--laranja);
+  padding: 10px 28px;
+  display: flex; gap: 22px; flex-wrap: wrap; align-items: center;
+}
+.leg-titulo { font-size:.74rem; font-weight:700; color:var(--azul-esc); }
+.leg-item { display:flex; align-items:center; gap:7px; font-size:.75rem; }
+.leg-box {
+  width:26px; height:18px; border-radius:4px; border:2px solid;
+  display:flex; align-items:center; justify-content:center;
+  font-size:7px; font-weight:700; flex-shrink:0;
+}
+
+/* ── WRAPPER DO MAPA ── */
+.mapa-wrapper {
+  background: var(--branco);
+  border: 4px solid var(--azul);
+  border-top: none;
+  padding: 22px 20px 26px;
+  overflow-x: auto;
+  position: relative;
+}
+.mapa-wrapper::before {
+  content:'';
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(37,99,168,.04) 1px, transparent 1px),
+    linear-gradient(90deg,rgba(37,99,168,.04) 1px,transparent 1px);
+  background-size:28px 28px;
+  pointer-events:none;
+}
+
+/* ── CONTAINER ESCALÁVEL ── */
+.mapa-scale-wrap { position: relative; }
+
+.mapa-area {
+  position: relative;
+  width: 940px;
+  min-height: 470px; /* espaço suficiente para 4 níveis sem sobreposição */
+  transform-origin: top left;
+}
+
+/* SVG das setas — cobre toda a área, overflow:visible para linhas longas */
+.mapa-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 940px;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 1;
+}
+
+/* ── NÓS (contenteditable) ──────────────────────────────────────────────────
+   Cada nó tem largura fixa mas altura AUTOMÁTICA.
+   O div .editavel cresce com o texto: word-wrap + white-space normal.
+   Não há mais input — o contenteditable é o próprio campo de texto.
+─────────────────────────────────────────────────────────────────────────── */
+.no {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 2.5px solid;
+  text-align: center;
+  font-weight: 600;
+  padding: 6px 8px;
+  background: var(--branco);
+  z-index: 2;
+  /* altura automática — cresce com o conteúdo */
+  height: auto;
+  min-height: 44px;
+}
+
+/* Campo de texto editável dentro do nó */
+.editavel {
+  outline: none;
+  width: 100%;
+  text-align: center;
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  line-height: 1.4;
+  /* FUNDAMENTAL: permite quebra de linha */
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  cursor: text;
+}
+
+/* Placeholder via ::before quando vazio */
+.editavel:empty::before {
+  content: attr(data-ph);
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+/* Conceito Principal */
+.no-cp {
+  width: 190px;
+  border-color: var(--laranja); background: #fff3e0;
+  top: 12px; left: 375px;
+}
+.no-cp .editavel { font-size: .9rem; color: #92400e; }
+
+/* Nível 1 */
+.no-n1 {
+  width: 138px;
+  border-color: var(--azul); background: var(--azul-cl);
+  top: 110px;
+}
+.no-n1 .editavel { font-size: .8rem; color: #1e40af; }
+#n1a { left:  80px; }
+#n1b { left: 401px; }
+#n1c { left: 722px; }
+
+/* Nível 2 */
+.no-n2 {
+  width: 118px;
+  border-color: var(--verde); background: #d1fae5;
+  top: 220px;
+}
+.no-n2 .editavel { font-size: .75rem; color: #065f46; }
+#n2aa { left:  14px; }
+#n2ab { left: 172px; }
+#n2ba { left: 331px; }
+#n2bb { left: 485px; }
+#n2ca { left: 643px; }
+#n2cb { left: 808px; }
+
+/* Nível 3 */
+.no-n3 {
+  width: 108px;
+  border-color: var(--roxo); background: #ede9fe;
+  top: 390px;
+}
+.no-n3 .editavel { font-size: .74rem; color: #4c1d95; }
+#n3a { left: 100px; }
+#n3b { left: 416px; }
+#n3c { left: 732px; }
+
+/* ── PÍLULAS DE LIGAÇÃO ─────────────────────────────────────────────────────
+   Posição definida 100% por JS (redesenharSetas).
+   height: auto para crescer se o usuário digitar muito.
+   min-height para não colapsar quando vazia.
+─────────────────────────────────────────────────────────────────────────── */
+.lig {
+  position: absolute;
+  min-height: 22px;
+  height: auto;
+  border-radius: 20px;
+  background: var(--azul);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  padding: 3px 8px;
+  /* largura fixa; texto quebra se necessário */
+  width: 90px;
+}
+.lig .editavel {
+  font-style: italic;
+  color: white;
+  font-size: .67rem;
+  font-weight: 400;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.lig .editavel:empty::before { color: rgba(255,255,255,.55); }
+.lig.verde {
+  background: var(--verde);
+  border: 1.5px dashed rgba(255,255,255,.5);
+  width: 104px;
+}
+
+/* ── SEÇÃO DE GUIA ── */
+.guia {
+  background: var(--branco);
+  border: 4px solid var(--azul-esc);
+  border-top: none;
+}
+.guia-titulo {
+  background: var(--azul-esc);
+  color: white;
+  padding: 13px 26px;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  display: flex; align-items: center; gap: 10px;
+}
+.guia-corpo { padding: 20px 26px 24px; }
+.passo {
+  display: flex; gap: 16px; padding: 14px 0;
+  border-bottom: 1px solid #e2e8f0;
+  align-items: flex-start;
+}
+.passo:last-child { border-bottom: none; }
+.passo-num {
+  min-width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .9rem; flex-shrink: 0; color: white;
+}
+.passo-num.laranja { background: var(--laranja); }
+.passo-num.azul    { background: var(--azul); }
+.passo-num.verde   { background: var(--verde); }
+.passo-num.roxo    { background: var(--roxo); }
+.passo-num.cinza   { background: #64748b; }
+.passo-conteudo h3 { font-size: .9rem; font-weight: 700; margin-bottom: 5px; color: var(--azul-esc); }
+.passo-conteudo p  { font-size: .82rem; line-height: 1.6; color: #475569; }
+.passo-conteudo .exemplo {
+  margin-top: 8px; background: #f8fafc;
+  border-left: 3px solid var(--azul);
+  padding: 7px 12px; border-radius: 0 6px 6px 0;
+  font-size: .78rem; color: var(--texto); font-style: italic;
+}
+.passo-conteudo .exemplo strong { font-style: normal; color: var(--azul-esc); }
+.passo-conteudo ul { margin-top: 6px; padding-left: 18px; font-size: .8rem; color: #475569; line-height: 1.7; }
+.alerta {
+  margin-top: 16px; background: #fff7ed;
+  border: 1.5px solid var(--laranja); border-radius: 8px;
+  padding: 10px 16px; font-size: .8rem; color: #92400e;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.alerta-icone { font-size: 1.1rem; flex-shrink:0; margin-top:1px; }
+
+/* ── BOTÕES ── */
+.bts { display:flex; justify-content:flex-end; gap:10px; margin-top:14px; }
+button {
+  background: var(--azul); color: white; border: none; border-radius: 8px;
+  padding: 9px 20px; cursor: pointer;
+  font-family:'Source Sans 3',sans-serif; font-size:.86rem; font-weight:600;
+  display:flex; align-items:center; gap:7px; transition: background .2s;
+}
+button:hover { background: var(--azul-esc); }
+button.sec { background: #64748b; }
+button.sec:hover { background: #475569; }
+
+/* ── OVERLAY DE LOADING ── */
+#jpg-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(26,46,74,.78);
+  z-index:9999; align-items:center; justify-content:center;
+  flex-direction:column; gap:14px; color:white;
+  font-size:.95rem; font-weight:600;
+}
+#jpg-overlay.ativo { display:flex; }
+.spinner {
+  width:38px; height:38px; border:4px solid rgba(255,255,255,.3);
+  border-top-color:white; border-radius:50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── IMPRESSÃO ── */
+@media print {
+  body { background:white; padding:0; }
+  .bts, .guia { display:none !important; }
+  .header { border-radius:0; }
+  .mapa-wrapper { border:2px solid #ccc; }
+  .mapa-area { transform: none !important; }
+  .mapa-scale-wrap { height: auto !important; }
+}
+</style>
+</head>
+<body>
+<div class="pagina">
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  BLOCO CAPTURADO NO JPG                                       -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="bloco-captura">
+
+<!-- CABEÇALHO -->
+<div class="header">
+  <div class="header-icon">🗺️</div>
+  <div>
+    <h1>Mapa Conceitual</h1>
+    <p>Modelo para preenchimento — Ensino Médio &nbsp;|&nbsp; Complete os conceitos e as palavras de ligação</p>
+  </div>
+</div>
+
+<!-- IDENTIFICAÇÃO -->
+<div class="identificacao">
+  <div class="campo">
+    <label>Nome do(a) Estudante</label>
+    <input type="text" placeholder="Nome completo">
+  </div>
+  <div class="campo">
+    <label>Turma / Série</label>
+    <input type="text" placeholder="Ex.: 2º A">
+  </div>
+  <div class="campo">
+    <label>Data</label>
+    <input type="text" placeholder="__/__/____">
+  </div>
+  <div class="campo full">
+    <label>Tema / Disciplina</label>
+    <input type="text" placeholder="Ex.: Física – Leis de Newton e Dinâmica">
+  </div>
+</div>
+
+<!-- LEGENDA -->
+<div class="legenda">
+  <span class="leg-titulo">LEGENDA:</span>
+  <div class="leg-item">
+    <div class="leg-box" style="border-color:var(--laranja);background:#fff3e0;color:var(--laranja);">CP</div>
+    Conceito Principal
+  </div>
+  <div class="leg-item">
+    <div class="leg-box" style="border-color:var(--azul);background:var(--azul-cl);color:var(--azul);">N1</div>
+    Conceitos de 1º nível
+  </div>
+  <div class="leg-item">
+    <div class="leg-box" style="border-color:var(--verde);background:#d1fae5;color:var(--verde);">N2</div>
+    Subconceitos de 2º nível
+  </div>
+  <div class="leg-item">
+    <div class="leg-box" style="border-color:var(--roxo);background:#ede9fe;color:var(--roxo);">N3</div>
+    Detalhes de 3º nível
+  </div>
+  <div class="leg-item">
+    <div class="leg-box" style="border-color:var(--azul);background:var(--azul);color:white;border-radius:20px;width:34px;">lig.</div>
+    Palavra de ligação
+  </div>
+  <div class="leg-item" style="margin-left:auto;">
+    <svg width="44" height="18" viewBox="0 0 44 18">
+      <defs><marker id="lp" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><polygon points="0 0,7 3.5,0 7" fill="#2563a8"/></marker></defs>
+      <line x1="2" y1="9" x2="36" y2="9" stroke="#2563a8" stroke-width="2" marker-end="url(#lp)"/>
+    </svg>
+    Seta de relação
+  </div>
+</div>
+
+<!-- MAPA -->
+<div class="mapa-wrapper">
+  <div class="mapa-scale-wrap" id="scaleWrap">
+    <div class="mapa-area" id="mapaArea">
+
+      <!-- SVG dinâmico — as linhas são desenhadas por JS -->
+      <svg class="mapa-svg" id="mapaSvg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="pa" markerWidth="8" markerHeight="8" refX="6" refY="3.5" orient="auto">
+            <polygon points="0 0,8 3.5,0 7" fill="#2563a8"/>
+          </marker>
+          <marker id="pv" markerWidth="8" markerHeight="8" refX="6" refY="3.5" orient="auto">
+            <polygon points="0 0,8 3.5,0 7" fill="#2a7d5c"/>
+          </marker>
+        </defs>
+        <!-- linhas inseridas dinamicamente por redesenharSetas() -->
+      </svg>
+
+      <!-- ══ CONCEITO PRINCIPAL ══ -->
+      <div class="no no-cp" id="bloco-cp">
+        <div class="editavel" contenteditable="true"
+             data-ph="✦ CONCEITO PRINCIPAL&#10;Ex.: Força"></div>
+      </div>
+
+      <!-- ══ PÍLULAS CP → N1 ══ -->
+      <div class="lig" id="l-cp-n1a">
+        <div class="editavel" contenteditable="true" data-ph="classifica-se em…"></div>
+      </div>
+      <div class="lig" id="l-cp-n1b">
+        <div class="editavel" contenteditable="true" data-ph="é descrita por…"></div>
+      </div>
+      <div class="lig" id="l-cp-n1c">
+        <div class="editavel" contenteditable="true" data-ph="produz…"></div>
+      </div>
+
+      <!-- ══ NÍVEL 1 ══ -->
+      <div class="no no-n1" id="n1a">
+        <div class="editavel" contenteditable="true" data-ph="Conceito A&#10;Ex.: Tipos de Força"></div>
+      </div>
+      <div class="no no-n1" id="n1b">
+        <div class="editavel" contenteditable="true" data-ph="Conceito B&#10;Ex.: Leis de Newton"></div>
+      </div>
+      <div class="no no-n1" id="n1c">
+        <div class="editavel" contenteditable="true" data-ph="Conceito C&#10;Ex.: Movimento"></div>
+      </div>
+
+      <!-- ══ PÍLULAS N1 → N2 ══ -->
+      <div class="lig" id="l-n1a-n2aa">
+        <div class="editavel" contenteditable="true" data-ph="inclui…"></div>
+      </div>
+      <div class="lig" id="l-n1a-n2ab">
+        <div class="editavel" contenteditable="true" data-ph="engloba…"></div>
+      </div>
+      <div class="lig" id="l-n1b-n2ba">
+        <div class="editavel" contenteditable="true" data-ph="enuncia…"></div>
+      </div>
+      <div class="lig" id="l-n1b-n2bb">
+        <div class="editavel" contenteditable="true" data-ph="relaciona…"></div>
+      </div>
+      <div class="lig" id="l-n1c-n2ca">
+        <div class="editavel" contenteditable="true" data-ph="altera…"></div>
+      </div>
+      <div class="lig" id="l-n1c-n2cb">
+        <div class="editavel" contenteditable="true" data-ph="causa…"></div>
+      </div>
+
+      <!-- ══ NÍVEL 2 ══ -->
+      <div class="no no-n2" id="n2aa">
+        <div class="editavel" contenteditable="true" data-ph="Força Peso"></div>
+      </div>
+      <div class="no no-n2" id="n2ab">
+        <div class="editavel" contenteditable="true" data-ph="Força Normal"></div>
+      </div>
+      <div class="no no-n2" id="n2ba">
+        <div class="editavel" contenteditable="true" data-ph="1ª Lei (Inércia)"></div>
+      </div>
+      <div class="no no-n2" id="n2bb">
+        <div class="editavel" contenteditable="true" data-ph="2ª Lei (F=ma)"></div>
+      </div>
+      <div class="no no-n2" id="n2ca">
+        <div class="editavel" contenteditable="true" data-ph="Velocidade"></div>
+      </div>
+      <div class="no no-n2" id="n2cb">
+        <div class="editavel" contenteditable="true" data-ph="Aceleração"></div>
+      </div>
+
+      <!-- ══ PÍLULAS N2 → N3 ══ -->
+      <div class="lig" id="l-n2ab-n3a">
+        <div class="editavel" contenteditable="true" data-ph="atua em…"></div>
+      </div>
+      <div class="lig" id="l-n2bb-n3b">
+        <div class="editavel" contenteditable="true" data-ph="determina…"></div>
+      </div>
+      <div class="lig" id="l-n2cb-n3c">
+        <div class="editavel" contenteditable="true" data-ph="gera…"></div>
+      </div>
+
+      <!-- ══ PÍLULA CRUZADA ══ -->
+      <div class="lig verde" id="l-cross">
+        <div class="editavel" contenteditable="true" data-ph="também afeta…"></div>
+      </div>
+
+      <!-- ══ NÍVEL 3 ══ -->
+      <div class="no no-n3" id="n3a">
+        <div class="editavel" contenteditable="true" data-ph="Superfície"></div>
+      </div>
+      <div class="no no-n3" id="n3b">
+        <div class="editavel" contenteditable="true" data-ph="Massa (kg)"></div>
+      </div>
+      <div class="no no-n3" id="n3c">
+        <div class="editavel" contenteditable="true" data-ph="Deslocamento"></div>
+      </div>
+
+    </div><!-- .mapa-area -->
+  </div><!-- .mapa-scale-wrap -->
+</div><!-- .mapa-wrapper -->
+
+</div><!-- #bloco-captura -->
+
+<!-- ══ GUIA PASSO A PASSO ══ -->
+<div class="guia">
+  <div class="guia-titulo">📋 Como criar um Mapa Conceitual — Passo a Passo</div>
+  <div class="guia-corpo">
+
+    <div class="passo">
+      <div class="passo-num laranja">1</div>
+      <div class="passo-conteudo">
+        <h3>Defina o Conceito Principal</h3>
+        <p>Identifique o <strong>tema central</strong> — a ideia mais abrangente que engloba tudo que será estudado. Escreva-o no nó laranja no topo. Use uma palavra ou expressão curta e precisa.</p>
+        <div class="exemplo"><strong>Exemplo (Física):</strong> "Força" é o conceito principal numa aula de dinâmica. Prefira <em>"Força"</em> a "o estudo das forças que agem nos corpos".</div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num azul">2</div>
+      <div class="passo-conteudo">
+        <h3>Liste os Conceitos de 1º Nível</h3>
+        <p>Pense nos <strong>2 a 4 grandes subtemas</strong> diretamente relacionados ao conceito principal (nós azuis).</p>
+        <div class="exemplo"><strong>Exemplo:</strong> De "Força" surgem → <em>Tipos de Força, Leis de Newton, Movimento</em>.</div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num azul">3</div>
+      <div class="passo-conteudo">
+        <h3>Escreva as Palavras de Ligação</h3>
+        <p>As <strong>pílulas nas setas</strong> transformam dois conceitos em uma proposição com sentido. Use verbos ou locuções verbais. Leia no sentido da seta e verifique se a frase faz sentido.</p>
+        <ul>
+          <li>✔ Boas ligações: <em>classifica-se em, é descrita por, produz, causa, resulta em, depende de</em></li>
+          <li>✘ Evite: <em>"está relacionado com"</em> (vaga demais)</li>
+        </ul>
+        <div class="exemplo"><strong>Proposição:</strong> <em>Força → classifica-se em → Tipos de Força</em> ✔</div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num verde">4</div>
+      <div class="passo-conteudo">
+        <h3>Expanda para o 2º Nível (Subconceitos)</h3>
+        <p>Para cada N1, adicione <strong>2 a 3 subconceiros</strong> mais específicos (nós verdes) com suas palavras de ligação.</p>
+        <div class="exemplo"><em>Leis de Newton → enuncia → 1ª Lei (Inércia)</em> e <em>Leis de Newton → relaciona → 2ª Lei (F = m·a)</em></div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num roxo">5</div>
+      <div class="passo-conteudo">
+        <h3>Adicione os Detalhes de 3º Nível</h3>
+        <p>Os nós roxos representam <strong>exemplos concretos ou grandezas específicas</strong>. Inclua apenas onde faz sentido aprofundar.</p>
+        <div class="exemplo"><em>2ª Lei (F = m·a) → determina → Massa (kg)</em></div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num verde">6</div>
+      <div class="passo-conteudo">
+        <h3>Identifique a Ligação Cruzada (seta tracejada verde)</h3>
+        <p>Conecta conceitos de <strong>ramos diferentes</strong>. Pergunte-se: <em>"Algum conceito de um ramo explica algo em outro ramo?"</em></p>
+        <div class="exemplo"><em>Força Peso (ramo A) → também afeta → Aceleração (ramo C)</em> — a força peso causa aceleração de queda livre.</div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num cinza">7</div>
+      <div class="passo-conteudo">
+        <h3>Revise: leia cada proposição em voz alta</h3>
+        <p>Percorra todas as setas. Cada proposição deve ser uma frase gramaticalmente correta e verdadeira.</p>
+        <ul>
+          <li>✔ <em>"Força → produz → Movimento"</em></li>
+          <li>✘ <em>"Força → movimento → Aceleração"</em> — "movimento" é substantivo, não é uma boa ligação</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="alerta">
+      <div class="alerta-icone">💡</div>
+      <div><strong>Mapa Conceitual ≠ Mapa Mental:</strong> No mapa mental os ramos são palavras soltas. No mapa <em>conceitual</em> cada seta <strong>obrigatoriamente</strong> tem uma palavra de ligação que forma uma proposição com significado. Essa é a diferença fundamental!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BOTÕES ══ -->
+<div class="bts">
+  <button class="sec" onclick="limpar()">🗑 Limpar tudo</button>
+  <button onclick="salvarJPG()">🖼 Salvar como JPG</button>
+</div>
+
+<!-- OVERLAY -->
+<div id="jpg-overlay">
+  <div class="spinner"></div>
+  <span>Gerando imagem JPG…</span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════════════════════
+   ARQUITETURA
+
+   Os nós usam contenteditable + white-space:pre-wrap → crescem verticalmente
+   automaticamente conforme o usuário digita, sem JS.
+
+   As setas e pílulas são reposicionadas por redesenharSetas() toda vez que
+   qualquer nó muda de tamanho (MutationObserver + ResizeObserver).
+
+   redesenharSetas() converte coordenadas de tela → coordenadas SVG (940px),
+   desenhando cada linha de center-bottom do nó pai até center-top do nó filho,
+   e centraliza a pílula no ponto médio de cada seta.
+═══════════════════════════════════════════════════════════════════════════ */
+
+const NAT_W = 940;
+
+/* ── Definição das conexões ────────────────────────────────────────────── */
+/* pilT: posição da pílula ao longo da seta (0=início … 1=fim).
+   Padrão 0.5 (meio). Pares do mesmo pai usam 0.38 / 0.62 para escalonar
+   as pílulas verticalmente e evitar sobreposição.
+   A cruzada usa 0.2 para ficar longe das pílulas regulares N2→N3. */
+const CONEXOES = [
+  { de:'bloco-cp', para:'n1a',  pil:'l-cp-n1a',   cruzada:false },
+  { de:'bloco-cp', para:'n1b',  pil:'l-cp-n1b',   cruzada:false },
+  { de:'bloco-cp', para:'n1c',  pil:'l-cp-n1c',   cruzada:false },
+  // n1a → filhos: esquerdo sobe (0.38), direito desce (0.62)
+  { de:'n1a', para:'n2aa', pil:'l-n1a-n2aa', cruzada:false, pilT:0.38 },
+  { de:'n1a', para:'n2ab', pil:'l-n1a-n2ab', cruzada:false, pilT:0.62 },
+  // n1b → filhos
+  { de:'n1b', para:'n2ba', pil:'l-n1b-n2ba', cruzada:false, pilT:0.38 },
+  { de:'n1b', para:'n2bb', pil:'l-n1b-n2bb', cruzada:false, pilT:0.62 },
+  // n1c → filhos
+  { de:'n1c', para:'n2ca', pil:'l-n1c-n2ca', cruzada:false, pilT:0.38 },
+  { de:'n1c', para:'n2cb', pil:'l-n1c-n2cb', cruzada:false, pilT:0.62 },
+  // N2 → N3: pílulas no meio (0.5)
+  { de:'n2ab', para:'n3a', pil:'l-n2ab-n3a', cruzada:false },
+  { de:'n2bb', para:'n3b', pil:'l-n2bb-n3b', cruzada:false },
+  { de:'n2cb', para:'n3c', pil:'l-n2cb-n3c', cruzada:false },
+  // Ligação cruzada: pílula perto da origem (0.2)
+  { de:'n2aa', para:'n3b', pil:'l-cross', cruzada:true, pilT:0.2 },
+];
+
+/* ── Helpers ───────────────────────────────────────────────────────────── */
+function getScale() {
+  const t = document.getElementById('mapaArea').style.transform;
+  const m = t.match(/scale\(([\d.]+)\)/);
+  return m ? parseFloat(m[1]) : 1;
+}
+
+/* Converte rect de tela para coordenadas do SVG (espaço 940px, sem scale) */
+function paraCoordSvg(rect, areaRect, scale) {
+  return {
+    left:   (rect.left   - areaRect.left) / scale,
+    top:    (rect.top    - areaRect.top)  / scale,
+    right:  (rect.right  - areaRect.left) / scale,
+    bottom: (rect.bottom - areaRect.top)  / scale,
+    cx:     (rect.left + rect.width  / 2 - areaRect.left) / scale,
+    cy:     (rect.top  + rect.height / 2 - areaRect.top)  / scale,
+  };
+}
+
+/* ── Redesenha todas as setas e reposiciona todas as pílulas ───────────── */
+function redesenharSetas() {
+  const area    = document.getElementById('mapaArea');
+  const svg     = document.getElementById('mapaSvg');
+  const wrap    = document.getElementById('scaleWrap');
+  const scale   = getScale();
+  const areaRect = area.getBoundingClientRect();
+
+  /* Atualiza altura do wrapper conforme a área cresce */
+  wrap.style.height = area.scrollHeight * scale + 'px';
+
+  /* Limpa linhas antigas (mas mantém <defs>) */
+  svg.querySelectorAll('line').forEach(l => l.remove());
+
+  CONEXOES.forEach(c => {
+    const elDe   = document.getElementById(c.de);
+    const elPara = document.getElementById(c.para);
+    const elPil  = document.getElementById(c.pil);
+    if (!elDe || !elPara || !elPil) return;
+
+    const rDe   = paraCoordSvg(elDe.getBoundingClientRect(),   areaRect, scale);
+    const rPara = paraCoordSvg(elPara.getBoundingClientRect(), areaRect, scale);
+
+    /* Pontos da linha: center-bottom do pai → center-top do filho */
+    const x1 = rDe.cx,   y1 = rDe.bottom;
+    const x2 = rPara.cx, y2 = rPara.top;
+
+    /* Desenha a linha */
+    const linha = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    linha.setAttribute('x1', x1);
+    linha.setAttribute('y1', y1);
+    linha.setAttribute('x2', x2);
+    linha.setAttribute('y2', y2);
+    linha.setAttribute('stroke',       c.cruzada ? '#2a7d5c' : '#2563a8');
+    linha.setAttribute('stroke-width', '2');
+    linha.setAttribute('marker-end',   c.cruzada ? 'url(#pv)' : 'url(#pa)');
+    if (c.cruzada) linha.setAttribute('stroke-dasharray', '6,4');
+    svg.appendChild(linha);
+
+    /* Posiciona a pílula ao longo da seta (pilT = 0.5 por padrão) */
+    const t    = c.pilT ?? 0.5;
+    const midX = x1 + (x2 - x1) * t;
+    const midY = y1 + (y2 - y1) * t;
+    const pw = elPil.offsetWidth;
+    const ph = elPil.offsetHeight;
+
+    elPil.style.left = (midX - pw / 2) + 'px';
+    elPil.style.top  = (midY - ph / 2) + 'px';
+  });
+}
+
+/* ── Escalonamento da área inteira ─────────────────────────────────────── */
+function escalar() {
+  const wrapper    = document.querySelector('.mapa-wrapper');
+  const area       = document.getElementById('mapaArea');
+  const disponivel = wrapper.clientWidth - 40;
+  const scale      = Math.min(1, disponivel / NAT_W);
+  area.style.transform = `scale(${scale})`;
+  redesenharSetas();
+}
+
+/* ── Observadores: qualquer mudança de tamanho redesenha ───────────────── */
+function iniciarObservadores() {
+  const area = document.getElementById('mapaArea');
+
+  /* ResizeObserver: dispara quando a área ou qualquer nó muda de tamanho */
+  const ro = new ResizeObserver(() => redesenharSetas());
+  ro.observe(area);
+  area.querySelectorAll('.no, .lig').forEach(el => ro.observe(el));
+
+  /* MutationObserver: dispara quando o texto dentro dos editaveis muda */
+  const mo = new MutationObserver(() => redesenharSetas());
+  area.querySelectorAll('.editavel').forEach(ed => {
+    mo.observe(ed, { childList: true, subtree: true, characterData: true });
+  });
+}
+
+/* ── Init ──────────────────────────────────────────────────────────────── */
+window.addEventListener('load', () => {
+  escalar();
+  iniciarObservadores();
+});
+window.addEventListener('resize', escalar);
+
+/* ── Limpar ─────────────────────────────────────────────────────────────  */
+function limpar() {
+  if (!confirm('Deseja apagar todos os campos preenchidos?')) return;
+  document.querySelectorAll('.mapa-area .editavel').forEach(ed => ed.innerHTML = '');
+  document.querySelectorAll('.identificacao input').forEach(inp => inp.value = '');
+  setTimeout(redesenharSetas, 50);
+}
+
+/* ── Salvar JPG ─────────────────────────────────────────────────────────
+   contenteditable é capturado nativamente pelo html2canvas.
+   Só precisamos:
+   1. Força escala 1:1 (sem transform) para nitidez máxima.
+   2. Converter os <input> da identificação em spans (esses ainda são inputs).
+   3. Capturar apenas #bloco-captura.
+   4. Restaurar tudo.
+─────────────────────────────────────────────────────────────────────────  */
+async function salvarJPG() {
+  const overlay  = document.getElementById('jpg-overlay');
+  const bloco    = document.getElementById('bloco-captura');
+  const area     = document.getElementById('mapaArea');
+  const wrap     = document.getElementById('scaleWrap');
+  overlay.classList.add('ativo');
+
+  const transformAnt = area.style.transform;
+  const alturaAnt    = wrap.style.height;
+  const subs = [];
+
+  try {
+    /* 1 — Força 1:1 */
+    area.style.transform = 'scale(1)';
+    wrap.style.height    = area.scrollHeight + 'px';
+    redesenharSetas(); /* reposiciona pílulas sem scale */
+
+    /* 2 — Converte inputs da identificação em spans */
+    bloco.querySelectorAll('.identificacao input').forEach(inp => {
+      const vazio = !inp.value.trim();
+      const span  = document.createElement('span');
+      const cs    = window.getComputedStyle(inp);
+      span.textContent           = vazio ? inp.placeholder : inp.value;
+      span.style.fontFamily      = cs.fontFamily;
+      span.style.fontSize        = cs.fontSize;
+      span.style.color           = vazio ? 'rgba(0,0,0,0.35)' : cs.color;
+      span.style.display         = 'inline-block';
+      span.style.width           = inp.offsetWidth + 'px';
+      span.style.borderBottom    = '1.5px solid #94a3b8';
+      span.style.paddingBottom   = '2px';
+      inp.parentNode.replaceChild(span, inp);
+      subs.push({ inp, span, pai: span.parentNode });
+    });
+
+    await new Promise(r => setTimeout(r, 200));
+
+    /* 3 — Captura */
+    const canvas = await html2canvas(bloco, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+    });
+
+    /* 4 — Download */
+    const link = document.createElement('a');
+    link.download = 'mapa_conceitual.jpg';
+    link.href = canvas.toDataURL('image/jpeg', 0.95);
+    link.click();
+
+  } catch (e) {
+    alert('Erro ao gerar imagem: ' + e.message);
+  } finally {
+    subs.forEach(({ inp, span, pai }) => {
+      if (pai.contains(span)) pai.replaceChild(inp, span);
+    });
+    area.style.transform = transformAnt;
+    wrap.style.height    = alturaAnt;
+    redesenharSetas();
+    overlay.classList.remove('ativo');
+  }
+}
+</script>
+</body>
+</html>
