@@ -66,6 +66,8 @@ header{background:var(--tb);border-bottom:1.5px solid var(--border);display:flex
 #mcbar-stop:hover{background:rgba(255,255,255,.32);}
 #toast{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:rgba(26,25,22,.88);color:#fff;padding:7px 18px;border-radius:22px;font-size:12.5px;pointer-events:none;opacity:0;white-space:nowrap;transition:opacity .25s;z-index:50;}
 #toast.show{opacity:1;}
+#ccount{position:absolute;top:10px;left:12px;background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:5px 13px;font-size:12.5px;font-weight:600;color:var(--acc);box-shadow:var(--shsm);z-index:30;display:flex;align-items:center;gap:6px;pointer-events:none;}
+#ccount::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--acc);}
 #zc{position:absolute;bottom:18px;right:14px;display:flex;flex-direction:column;gap:4px;z-index:30;}
 .zb{width:36px;height:36px;background:#fff;border:1.5px solid var(--border);border-radius:8px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shsm);color:var(--text);font-family:'DM Sans',sans-serif;touch-action:manipulation;}
 .zb:hover{background:var(--bg);}
@@ -156,6 +158,7 @@ header{background:var(--tb);border-bottom:1.5px solid var(--border);display:flex
     <button id="mcbar-stop">✕ Parar</button>
   </div>
   <div id="hint"><h2>Mapa Conceitual</h2><p>Duplo clique no canvas para adicionar um conceito<br>Use os botões acima para conectar e organizar</p></div>
+  <div id="ccount">Conceitos: 0</div>
   <div id="toast"></div>
   <div id="zc">
     <button class="zb" id="z+">+</button>
@@ -287,7 +290,7 @@ function svgPt(cx,cy){const r=svg.getBoundingClientRect();return{x:(cx-r.left-pa
 function setT(){RG.setAttribute('transform',`translate(${pan.x},${pan.y}) scale(${zoom})`);zlbl.textContent=Math.round(zoom*100)+'%';}
 let tT;
 function toast_(m,d=2000){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>toastEl.classList.remove('show'),d);}
-function hideHint(){hint.style.opacity=nodes.length?'0':'1';}
+function hideHint(){hint.style.opacity=nodes.length?'0':'1';const cc=document.getElementById('ccount');if(cc)cc.textContent='Conceitos: '+nodes.length;}
 function snap(){hist.push({n:JSON.parse(JSON.stringify(nodes)),e:JSON.parse(JSON.stringify(edges))});if(hist.length>60)hist.shift();}
 function undo(){if(!hist.length){toast_('Nada para desfazer');return;}const p=hist.pop();nodes=p.n;edges=p.e;nid=nodes.length?Math.max(...nodes.map(n=>n.id))+1:1;eid=edges.length?Math.max(...edges.map(e=>e.id))+1:1;sel=null;renderAll();toast_('Desfeito ↩');}
 function wrap(t,mx=22){const ws=t.split(' ');const ls=[];let c='';for(const w of ws){const x=(c?c+' ':'')+w;if(x.length<=mx)c=x;else{if(c)ls.push(c);c=w;}}if(c)ls.push(c);return ls.length?ls:[''];}
@@ -939,6 +942,8 @@ function getMapCanvas(scale=2.5){
       lines.forEach((l,i)=>{svg_+=`<text x="${nd.w/2}" y="${ty+i*lh}" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="13" font-weight="500" fill="#1a1916">${esc(l)}</text>`;});
       svg_+=`</g>`;
     });
+    // carimbo com o total de conceitos no canto inferior esquerdo
+    svg_+=`<text x="${ox+14}" y="${oy+H-14}" font-family="Arial,sans-serif" font-size="13" font-weight="600" fill="#7a7770">Total de conceitos: ${nodes.length}</text>`;
     const full=`<svg xmlns="http://www.w3.org/2000/svg" width="${W*scale}" height="${H*scale}" viewBox="${ox} ${oy} ${W} ${H}"><rect x="${ox}" y="${oy}" width="${W}" height="${H}" fill="white"/>${svg_}</svg>`;
     const enc='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(full);
     const img=new Image();
@@ -947,15 +952,22 @@ function getMapCanvas(scale=2.5){
     img.src=enc;
   });
 }
+function confirmExport(fmt){
+  if(!nodes.length){toast_('O mapa está vazio!');return false;}
+  return confirm(`O mapa tem ${nodes.length} conceito(s).\nDeseja salvar como ${fmt}?`);
+}
 document.getElementById('b-png').onclick=async()=>{
+  if(!confirmExport('PNG'))return;
   toast_('Gerando…');const c=await getMapCanvas(2.5);if(!c)return;
   const a=document.createElement('a');a.download='mapa-conceitual.png';a.href=c.toDataURL('image/png');a.click();
 };
 document.getElementById('b-jpg').onclick=async()=>{
+  if(!confirmExport('JPG'))return;
   toast_('Gerando…');const c=await getMapCanvas(2.5);if(!c)return;
   const a=document.createElement('a');a.download='mapa-conceitual.jpg';a.href=c.toDataURL('image/jpeg',0.95);a.click();
 };
 document.getElementById('b-pdf').onclick=async()=>{
+  if(!confirmExport('PDF'))return;
   toast_('Gerando…');const c=await getMapCanvas(2);if(!c)return;
   const{jsPDF}=window.jspdf;const W=c.width/2,H=c.height/2;
   const pdf=new jsPDF({orientation:W>H?'landscape':'portrait',unit:'px',format:[W,H]});
