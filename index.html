@@ -49,6 +49,21 @@ header{background:var(--tb);border-bottom:1.5px solid var(--border);display:flex
 .lswatch{width:32px;height:16px;border-radius:4px;cursor:pointer;border:2.5px solid transparent;transition:transform .1s,border-color .1s;box-shadow:0 1px 3px rgba(0,0,0,.14);}
 .lswatch:hover{transform:scale(1.1);}
 .lswatch.on{border-color:#1a1916;}
+.ntype-sel{display:flex;gap:8px;margin-bottom:14px;}
+.ntype{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:9px 6px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--muted);text-align:center;display:flex;flex-direction:column;gap:2px;transition:all .1s;}
+.ntype.on{border-color:var(--acc);background:rgba(29,92,58,.06);color:var(--text);}
+.ntype small{font-weight:400;font-size:10px;color:var(--muted);line-height:1.25;}
+.ntype input{display:none;}
+.ni-hint{font-size:11.5px;margin:-8px 0 14px;min-height:14px;line-height:1.35;}
+.ni-hint.bad{color:var(--danger);}
+.ni-hint.ok{color:var(--muted);}
+.vr{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12.5px;line-height:1.45;}
+.vr.ok{border-color:#bfe3cd;background:#f0fdf4;}
+.vr.warn{border-color:#f0d9a8;background:#fefce8;}
+.vr.err{border-color:#f0b8b3;background:#fdf0ef;}
+.vr b{display:block;margin-bottom:3px;color:var(--text);}
+.vr ul{margin:5px 0 0 18px;color:var(--muted);}
+.vr li{margin:1px 0;}
 .mbtns{display:flex;gap:8px;justify-content:flex-end;}
 .bpri{padding:8px 20px;background:var(--acc);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .13s;}
 .bpri:hover{background:#174d31;}
@@ -121,6 +136,9 @@ header{background:var(--tb);border-bottom:1.5px solid var(--border);display:flex
     <button class="btn" id="b-fit" title="Ajustar à tela">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>Ajustar
     </button>
+    <button class="btn" id="b-check" title="Verificar se o mapa segue o padrão">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Verificar
+    </button>
   </div>
   <div class="hrow">
     <button class="btn" id="b-save">
@@ -169,16 +187,22 @@ header{background:var(--tb);border-bottom:1.5px solid var(--border);display:flex
 <div class="ov" id="mn" style="display:none">
   <div class="modal">
     <div class="mtitle">✎ Editar Conceito</div>
-    <input type="text" id="ni" placeholder="Nome do conceito…" maxlength="80" autocomplete="off">
-    <div class="mlabel">Cor do conceito</div>
+    <div class="ntype-sel">
+      <label class="ntype on" id="nt-conc"><input type="radio" name="ntype" value="conceito" checked>Conceito<small>rótulo curto (máx. 4 palavras)</small></label>
+      <label class="ntype" id="nt-det"><input type="radio" name="ntype" value="detalhe">Detalhe / Exemplo<small>texto longo · ponta final</small></label>
+    </div>
+    <input type="text" id="ni" placeholder="Nome do conceito…" maxlength="160" autocomplete="off">
+    <div class="ni-hint ok" id="ni-hint"></div>
+    <div class="mlabel">Cor</div>
     <div class="palette" id="npal"></div>
     <div class="mbtns"><button class="bsec" id="nc-x">Cancelar</button><button class="bpri" id="nc-ok">Confirmar</button></div>
   </div>
 </div>
 <div class="ov" id="me" style="display:none">
   <div class="modal">
-    <div class="mtitle">↗ Palavra de Ligação</div>
-    <input type="text" id="ei" placeholder="Ex: é um tipo de, implica, causa… (opcional)" maxlength="60" autocomplete="off">
+    <div class="mtitle">↗ Palavra de Ligação <span style="color:var(--danger);font-weight:400">(obrigatória)</span></div>
+    <input type="text" id="ei" placeholder="Ex: é um tipo de, implica, causa, estabelece…" maxlength="60" autocomplete="off">
+    <div class="ni-hint" id="ei-hint"></div>
     <div class="mlabel">Cor da linha</div>
     <div class="lpalette" id="lpal"></div>
     <div class="mbtns"><button class="bsec" id="ec-x">Cancelar</button><button class="bpri" id="ec-ok">Confirmar</button></div>
@@ -201,7 +225,7 @@ header{background:var(--tb);border-bottom:1.5px solid var(--border);display:flex
     <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.5" id="mmc-desc">
       A seta sairá de <strong id="mmc-src">este conceito</strong> para vários destinos.
     </p>
-    <input type="text" id="mci" placeholder="Ex: é um tipo de, inclui, origina… (opcional)" maxlength="60" autocomplete="off">
+    <input type="text" id="mci" placeholder="Palavra de ligação (obrigatória): é um tipo de, inclui…" maxlength="60" autocomplete="off">
     <div class="mlabel">Cor das linhas</div>
     <div class="lpalette" id="mclpal"></div>
     <div class="mbtns"><button class="bsec" id="mcc-x">Cancelar</button><button class="bpri pur" id="mcc-ok">Iniciar →</button></div>
@@ -221,6 +245,7 @@ header{background:var(--tb);border-bottom:1.5px solid var(--border);display:flex
     <div class="hstep"><div class="hnum">1</div><div><div class="htit">Adicionar</div><div class="hdsc">Duplo clique no canvas ou botão <strong>+ Conceito</strong>. Digite o nome e escolha a cor.</div></div></div>
     <div class="hstep"><div class="hnum">2</div><div><div class="htit">Mover</div><div class="hdsc">Clique e arraste qualquer conceito. No celular/tablet, arraste com 1 dedo.</div></div></div>
     <div class="hstep"><div class="hnum">3</div><div><div class="htit">Editar nome/cor</div><div class="hdsc">Duplo clique no conceito, ou botão direito → Editar. No celular: segure ~0.6s.</div></div></div>
+    <div class="hstep"><div class="hnum">★</div><div><div class="htit">Conceito x Detalhe/Exemplo</div><div class="hdsc"><strong>Conceito</strong> = rótulo curto (máx. 4 palavras). Frases e explicações longas devem ser do tipo <strong>Detalhe/Exemplo</strong> (borda tracejada), que é sempre ponta final e não pode originar ligações. Use o botão <strong>Verificar</strong> para checar se o mapa segue o padrão.</div></div></div>
     <div class="hsec">🔗 Conexões</div>
     <div class="hstep"><div class="hnum">4</div><div><div class="htit">Conectar dois conceitos</div><div class="hdsc">Botão <strong>Conectar</strong> ou tecla <code>C</code>. Toque na origem → toque no destino. Escolha a palavra de ligação e a cor da linha.</div></div></div>
     <div class="hstep"><div class="hnum p">5</div><div><div class="htit" style="color:var(--acc2)">Conectar em Grupo</div><div class="hdsc">Botão <strong>Em Grupo</strong> ou tecla <code>M</code>. Toque num conceito e escolha se quer ligá-lo a vários outros (Divergente) ou juntar vários conceitos nele (Convergente).</div></div></div>
@@ -241,6 +266,13 @@ header{background:var(--tb);border-bottom:1.5px solid var(--border);display:flex
     <div class="mbtns" style="margin-top:16px"><button class="bpri" id="hclose">Entendido!</button></div>
   </div>
 </div>
+<div class="ov" id="mv" style="display:none">
+  <div class="modal hmod">
+    <div class="mtitle" style="font-family:'Playfair Display',serif;font-size:18px">✔ Verificar mapa</div>
+    <div id="mv-body"></div>
+    <div class="mbtns" style="margin-top:16px"><button class="bpri" id="mv-close">Fechar</button></div>
+  </div>
+</div>
 <input type="file" id="fi" accept=".json" style="display:none">
 <script>
 // ═══ CONSTANTS ═══════════════════════════════════════════════
@@ -254,6 +286,11 @@ const NCOLORS=[
 const LCOLORS=['#555555','#1a1916','#1d5c3a','#2563eb','#7c3aed','#ea580c','#db2777','#0891b2'];
 const SEL_COLOR='#1d5c3a';
 const DEF_LCOLOR='#555555';
+// ── Padrão de mapa conceitual (guarda-corpos) ──
+const MAX_CONC_WORDS=4;   // máx. de palavras num CONCEITO
+const MAX_CONC_CHARS=32;  // máx. de caracteres num CONCEITO
+function conceptTooLong(lbl){const t=(lbl||'').trim();const w=t?t.split(/\s+/).filter(Boolean).length:0;return w>MAX_CONC_WORDS||t.length>MAX_CONC_CHARS;}
+function isDetalhe(id){const n=nodes.find(n=>n.id===id);return !!(n&&n.type==='detalhe');}
 // ═══ STATE ═══════════════════════════════════════════════════
 let nodes=[],edges=[],sel=null,mode='sel',connSrc=null;
 let mcSrc=null,mcLabel='',mcColor=DEF_LCOLOR,mcType='out',mcCount=0,mcSess=0;
@@ -294,14 +331,14 @@ function hideHint(){hint.style.opacity=nodes.length?'0':'1';const cc=document.ge
 function snap(){hist.push({n:JSON.parse(JSON.stringify(nodes)),e:JSON.parse(JSON.stringify(edges))});if(hist.length>60)hist.shift();}
 function undo(){if(!hist.length){toast_('Nada para desfazer');return;}const p=hist.pop();nodes=p.n;edges=p.e;nid=nodes.length?Math.max(...nodes.map(n=>n.id))+1:1;eid=edges.length?Math.max(...edges.map(e=>e.id))+1:1;sel=null;renderAll();toast_('Desfeito ↩');}
 function wrap(t,mx=22){const ws=t.split(' ');const ls=[];let c='';for(const w of ws){const x=(c?c+' ':'')+w;if(x.length<=mx)c=x;else{if(c)ls.push(c);c=w;}}if(c)ls.push(c);return ls.length?ls:[''];}
-function nsize(lbl){const ls=wrap(lbl,22);const w=Math.max(130,Math.min(230,ls.reduce((m,l)=>Math.max(m,l.length*7.8+28),0)));const h=Math.max(46,ls.length*20+22);return{w,h};}
+function nsize(lbl,type='conceito'){const mx=type==='detalhe'?24:22;const maxW=type==='detalhe'?250:230;const ls=wrap(lbl,mx);const w=Math.max(130,Math.min(maxW,ls.reduce((m,l)=>Math.max(m,l.length*7.8+28),0)));const h=Math.max(46,ls.length*20+22);return{w,h};}
 function borderPt(nd,t){const cx=nd.x+nd.w/2,cy=nd.y+nd.h/2,dx=t.x-cx,dy=t.y-cy;if(!dx&&!dy)return{x:cx,y:cy};const hw=nd.w/2,hh=nd.h/2,adx=Math.abs(dx),ady=Math.abs(dy);if(adx*hh>ady*hw){const s=hw/adx;return{x:cx+dx*s,y:cy+dy*s};}else{const s=hh/ady;return{x:cx+dx*s,y:cy+dy*s};}}
 function mkEl(tag,a){const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const[k,v]of Object.entries(a||{}))el.setAttribute(k,v);return el;}
 function mkTxt(tag,a,txt){const el=mkEl(tag,a);el.textContent=txt;return el;}
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 // ═══ DATA MUTATIONS ══════════════════════════════════════════
-function addNode(x,y,lbl='Conceito',ci=0){snap();const{w,h}=nsize(lbl);const n={id:nid++,x:x-w/2,y:y-h/2,w,h,label:lbl,ci};nodes.push(n);renderNode(n);hideHint();return n;}
-function updateNode(id,lbl,ci){const n=nodes.find(n=>n.id===id);if(!n)return;const{w,h}=nsize(lbl);Object.assign(n,{label:lbl,ci,w,h});renderAll();}
+function addNode(x,y,lbl='Conceito',ci=0,type='conceito'){snap();const{w,h}=nsize(lbl,type);const n={id:nid++,x:x-w/2,y:y-h/2,w,h,label:lbl,ci,type};nodes.push(n);renderNode(n);hideHint();return n;}
+function updateNode(id,lbl,ci,type='conceito'){const n=nodes.find(n=>n.id===id);if(!n)return;const{w,h}=nsize(lbl,type);Object.assign(n,{label:lbl,ci,type,w,h});renderAll();}
 function addEdge(src,tgt,lbl='',multi=false,col=DEF_LCOLOR,mType='out'){
   if(src===tgt||edges.find(e=>e.source===src&&e.target===tgt))return null;
   if(!multi)snap();
@@ -550,17 +587,21 @@ function renderNode(nd){
   const isSel=sel?.type==='node'&&sel.id===nd.id;
   const isConn=connSrc===nd.id;
   const isMC=mode==='multiconn'&&mcSrc===nd.id;
-  const lines=wrap(nd.label,22);const lh=20,th=lines.length*lh;
+  const isDet=nd.type==='detalhe';
+  const lines=wrap(nd.label,isDet?24:22);const lh=20,th=lines.length*lh;
   const g=mkEl('g',{id:'n'+nd.id,transform:`translate(${nd.x},${nd.y})`});
   g.style.cursor='pointer';
   g.style.touchAction='none';
   g.appendChild(mkEl('rect',{x:2,y:3,width:nd.w,height:nd.h,rx:10,fill:'rgba(0,0,0,.08)'}));
   const sc=isMC?'#7c3aed':isConn?'#f59e0b':isSel?'#1d5c3a':c.stroke;
-  g.appendChild(mkEl('rect',{width:nd.w,height:nd.h,rx:10,fill:c.fill,stroke:sc,'stroke-width':isMC||isConn||isSel?2.5:1.8}));
-  g.appendChild(mkEl('rect',{x:12,y:0,width:nd.w-24,height:3.5,rx:2,fill:c.stroke,opacity:'0.6'}));
+  const fillCol=isDet?'#fbfaf7':c.fill;
+  const rectAttr={width:nd.w,height:nd.h,rx:10,fill:fillCol,stroke:sc,'stroke-width':isMC||isConn||isSel?2.5:1.8};
+  if(isDet)rectAttr['stroke-dasharray']='6 4';
+  g.appendChild(mkEl('rect',rectAttr));
+  if(!isDet)g.appendChild(mkEl('rect',{x:12,y:0,width:nd.w-24,height:3.5,rx:2,fill:c.stroke,opacity:'0.6'}));
   if(isMC)g.appendChild(mkEl('rect',{x:-3,y:-3,width:nd.w+6,height:nd.h+6,rx:13,fill:'none',stroke:'#7c3aed','stroke-width':'2','stroke-dasharray':'5 3',opacity:'.7'}));
   const ty=nd.h/2-th/2+lh/2;
-  lines.forEach((l,i)=>g.appendChild(mkTxt('text',{x:nd.w/2,y:ty+i*lh,'text-anchor':'middle','dominant-baseline':'middle','font-family':'Arial,sans-serif','font-size':'13','font-weight':'500','fill':'#1a1916','pointer-events':'none'},l)));
+  lines.forEach((l,i)=>g.appendChild(mkTxt('text',{x:nd.w/2,y:ty+i*lh,'text-anchor':'middle','dominant-baseline':'middle','font-family':'Arial,sans-serif','font-size':isDet?'12':'13','font-weight':isDet?'400':'500','font-style':isDet?'italic':'normal','fill':isDet?'#55524c':'#1a1916','pointer-events':'none'},l)));
   g.appendChild(mkEl('rect',{width:nd.w,height:nd.h,rx:10,fill:'transparent'}));
   // Handler unificado em Pointer Events (mouse + toque, sem disparo duplicado)
   g.addEventListener('pointerdown',e=>onNodePointerDown(e,nd.id));
@@ -651,8 +692,11 @@ function setMode(m){
   if(m!=='multiconn'&&prev==='multiconn')stopMC(false);
 }
 function handleConn(id){
-  if(!connSrc){connSrc=id;sel={type:'node',id};renderAll();toast_('Agora toque no destino…',4000);}
-  else{if(connSrc!==id){const e=addEdge(connSrc,id,'');connSrc=null;setMode('sel');if(e)openEdgeModal(e.id);else toast_('Conexão já existe!');}else{connSrc=null;setMode('sel');}}
+  if(!connSrc){
+    if(isDetalhe(id)){toast_('Detalhe/Exemplo não pode ser origem de uma ligação');return;}
+    connSrc=id;sel={type:'node',id};renderAll();toast_('Agora toque no destino…',4000);
+  }
+  else{if(connSrc!==id){const e=addEdge(connSrc,id,'');connSrc=null;setMode('sel');if(e)openEdgeModal(e.id,true);else toast_('Conexão já existe!');}else{connSrc=null;setMode('sel');}}
 }
 // Listener para os botões de tipo de fluxo no modal Em Grupo
 document.querySelectorAll('input[name="mcdir"]').forEach(r => {
@@ -675,6 +719,7 @@ document.querySelectorAll('input[name="mcdir"]').forEach(r => {
   });
 });
 function startMC(srcId){
+  if(isDetalhe(srcId)){toast_('Detalhe/Exemplo não pode ser origem de ligações');setMode('sel');return;}
   mcSrc=srcId;mcCount=0;mcLabel='';mcColor=DEF_LCOLOR;mcSess++;mcType='out';
 
   const rOut = document.querySelector('input[name="mcdir"][value="out"]');
@@ -692,7 +737,9 @@ function startMC(srcId){
   setTimeout(()=>document.getElementById('mci').focus(),60);
 }
 function confirmMCLbl(){
-  mcLabel=document.getElementById('mci').value.trim();
+  const lbl=document.getElementById('mci').value.trim();
+  if(!lbl){toast_('Informe a palavra de ligação (obrigatória)');document.getElementById('mci').focus();return;}
+  mcLabel=lbl;
   mcColor=document.querySelector('#mclpal .lswatch.on')?.getAttribute('data-c')||DEF_LCOLOR;
   mcType=document.querySelector('input[name="mcdir"]:checked').value;
   document.getElementById('mmc').style.display='none';
@@ -706,6 +753,7 @@ function confirmMCLbl(){
 function updMCCnt(){document.getElementById('mcbar-cnt').textContent=mcCount+' conexão'+(mcCount!==1?'ões':'');}
 function handleMCT(id){
   if(id===mcSrc){toast_('Não pode conectar a si mesmo');return;}
+  if(mcType==='in'&&isDetalhe(id)){toast_('Detalhe/Exemplo não pode ser origem de uma ligação');return;}
   snap();
   let e;
   if(mcType === 'out'){
@@ -753,15 +801,40 @@ document.getElementById('ctx-edit').onclick=()=>{
   if(nid !== null) openNodeModal(nid);
   else if(eid !== null) openEdgeModal(eid);
 };
-document.getElementById('ctx-conn').onclick=()=>{const id=ctxNid;hideCtx();setMode('conn');connSrc=id;sel={type:'node',id};renderAll();toast_('Toque no destino…',4000);};
+document.getElementById('ctx-conn').onclick=()=>{const id=ctxNid;hideCtx();if(isDetalhe(id)){toast_('Detalhe/Exemplo não pode ser origem de uma ligação');return;}setMode('conn');connSrc=id;sel={type:'node',id};renderAll();toast_('Toque no destino…',4000);};
 document.getElementById('ctx-mc').onclick=()=>{const id=ctxNid;hideCtx();startMC(id);};
 document.getElementById('ctx-del').onclick=()=>{hideCtx();delSelected();};
 document.addEventListener('click',e=>{if(!ctxEl.contains(e.target))hideCtx();});
 // ═══ NODE MODAL ══════════════════════════════════════════════
 function buildNPal(ci=0){const p=document.getElementById('npal');p.innerHTML='';NCOLORS.forEach((c,i)=>{const s=document.createElement('div');s.className='swatch'+(i===ci?' on':'');s.style.background=c.stroke;s.setAttribute('data-i',i);s.onclick=()=>{p.querySelectorAll('.swatch').forEach(x=>x.classList.remove('on'));s.classList.add('on');};p.appendChild(s);});}
-function openNodeModalNew(x,y){pendPos={x,y};editNid=null;document.getElementById('ni').value='';buildNPal(0);document.getElementById('mn').style.display='flex';setTimeout(()=>document.getElementById('ni').focus(),60);}
-function openNodeModal(id){editNid=id;pendPos=null;const n=nodes.find(n=>n.id===id);if(!n)return;document.getElementById('ni').value=n.label;buildNPal(n.ci);document.getElementById('mn').style.display='flex';setTimeout(()=>{const el=document.getElementById('ni');el.focus();el.select();},60);}
-function confirmNode(){const lbl=document.getElementById('ni').value.trim()||'Conceito';const ci=parseInt(document.querySelector('#npal .swatch.on')?.getAttribute('data-i')||'0');if(editNid!==null)updateNode(editNid,lbl,ci);else if(pendPos)addNode(pendPos.x,pendPos.y,lbl,ci);document.getElementById('mn').style.display='none';}
+function setNType(t){const r=document.querySelector('input[name="ntype"][value="'+t+'"]');if(r)r.checked=true;applyNTypeUI();}
+function applyNTypeUI(){
+  const t=document.querySelector('input[name="ntype"]:checked')?.value||'conceito';
+  document.getElementById('nt-conc').classList.toggle('on',t==='conceito');
+  document.getElementById('nt-det').classList.toggle('on',t==='detalhe');
+  document.getElementById('ni').setAttribute('placeholder',t==='detalhe'?'Texto do detalhe/exemplo…':'Nome do conceito…');
+  updNiHint();
+}
+function updNiHint(){
+  const t=document.querySelector('input[name="ntype"]:checked')?.value||'conceito';
+  const hint=document.getElementById('ni-hint');const v=document.getElementById('ni').value.trim();
+  if(t==='detalhe'){hint.className='ni-hint ok';hint.textContent='Detalhe/Exemplo: texto longo permitido. Não conta como conceito e é sempre ponta final.';return;}
+  const w=v?v.split(/\s+/).filter(Boolean).length:0;
+  if(conceptTooLong(v)){hint.className='ni-hint bad';hint.textContent=`Longo demais para um conceito (${w} palavras). Máx. ${MAX_CONC_WORDS} palavras / ${MAX_CONC_CHARS} caracteres — ou troque para "Detalhe/Exemplo".`;}
+  else{hint.className='ni-hint ok';hint.textContent=`${w}/${MAX_CONC_WORDS} palavras`;}
+}
+document.querySelectorAll('input[name="ntype"]').forEach(r=>r.addEventListener('change',applyNTypeUI));
+document.getElementById('ni').addEventListener('input',updNiHint);
+function openNodeModalNew(x,y){pendPos={x,y};editNid=null;document.getElementById('ni').value='';buildNPal(0);setNType('conceito');document.getElementById('mn').style.display='flex';setTimeout(()=>document.getElementById('ni').focus(),60);}
+function openNodeModal(id){editNid=id;pendPos=null;const n=nodes.find(n=>n.id===id);if(!n)return;document.getElementById('ni').value=n.label;buildNPal(n.ci);setNType(n.type==='detalhe'?'detalhe':'conceito');document.getElementById('mn').style.display='flex';setTimeout(()=>{const el=document.getElementById('ni');el.focus();el.select();},60);}
+function confirmNode(){
+  const type=document.querySelector('input[name="ntype"]:checked')?.value||'conceito';
+  const lbl=document.getElementById('ni').value.trim()||(type==='detalhe'?'Detalhe':'Conceito');
+  if(type==='conceito'&&conceptTooLong(lbl)){updNiHint();document.getElementById('ni').focus();return;} // bloqueia frase como conceito
+  const ci=parseInt(document.querySelector('#npal .swatch.on')?.getAttribute('data-i')||'0');
+  if(editNid!==null)updateNode(editNid,lbl,ci,type);else if(pendPos)addNode(pendPos.x,pendPos.y,lbl,ci,type);
+  document.getElementById('mn').style.display='none';
+}
 document.getElementById('nc-ok').onclick=confirmNode;
 document.getElementById('nc-x').onclick=()=>document.getElementById('mn').style.display='none';
 document.getElementById('ni').addEventListener('keydown',e=>{if(e.key==='Enter')confirmNode();if(e.key==='Escape')document.getElementById('mn').style.display='none';});
@@ -770,15 +843,55 @@ function buildLPal(palId,col=DEF_LCOLOR){
   const p=document.getElementById(palId);p.innerHTML='';
   LCOLORS.forEach(c=>{const s=document.createElement('div');s.className='lswatch'+(c===col?' on':'');s.style.background=c;s.setAttribute('data-c',c);s.onclick=()=>{p.querySelectorAll('.lswatch').forEach(x=>x.classList.remove('on'));s.classList.add('on');};p.appendChild(s);});
 }
-function openEdgeModal(id){editEid=id;const e=edges.find(e=>e.id===id);document.getElementById('ei').value=e?e.label:'';buildLPal('lpal',e?.color||DEF_LCOLOR);document.getElementById('me').style.display='flex';setTimeout(()=>document.getElementById('ei').focus(),60);}
-function confirmEdge(){const lbl=document.getElementById('ei').value.trim();const col=document.querySelector('#lpal .lswatch.on')?.getAttribute('data-c')||DEF_LCOLOR;updateEdge(editEid,lbl,col);document.getElementById('me').style.display='none';}
+let editEidNew=false; // true quando a aresta foi recém-criada (cancelar = remover)
+function openEdgeModal(id,isNew=false){editEid=id;editEidNew=isNew;const e=edges.find(e=>e.id===id);document.getElementById('ei').value=e?e.label:'';document.getElementById('ei-hint').textContent='';buildLPal('lpal',e?.color||DEF_LCOLOR);document.getElementById('me').style.display='flex';setTimeout(()=>document.getElementById('ei').focus(),60);}
+function confirmEdge(){
+  const lbl=document.getElementById('ei').value.trim();
+  if(!lbl){const h=document.getElementById('ei-hint');h.className='ni-hint bad';h.textContent='Obrigatório: a palavra de ligação forma a proposição (conceito → ligação → conceito).';document.getElementById('ei').focus();return;}
+  const col=document.querySelector('#lpal .lswatch.on')?.getAttribute('data-c')||DEF_LCOLOR;
+  updateEdge(editEid,lbl,col);editEidNew=false;document.getElementById('me').style.display='none';
+}
+function cancelEdgeModal(){if(editEidNew){edges=edges.filter(e=>e.id!==editEid);editEidNew=false;renderAll();}document.getElementById('me').style.display='none';}
 document.getElementById('ec-ok').onclick=confirmEdge;
-document.getElementById('ec-x').onclick=()=>document.getElementById('me').style.display='none';
-document.getElementById('ei').addEventListener('keydown',e=>{if(e.key==='Enter')confirmEdge();if(e.key==='Escape')document.getElementById('me').style.display='none';});
+document.getElementById('ec-x').onclick=cancelEdgeModal;
+document.getElementById('ei').addEventListener('keydown',e=>{if(e.key==='Enter')confirmEdge();if(e.key==='Escape')cancelEdgeModal();});
 // ═══ HELP ════════════════════════════════════════════════════
 document.getElementById('b-help').onclick=()=>document.getElementById('mh').style.display='flex';
 document.getElementById('hclose').onclick=()=>document.getElementById('mh').style.display='none';
 document.getElementById('mh').addEventListener('click',e=>{if(e.target===document.getElementById('mh'))document.getElementById('mh').style.display='none';});
+// ═══ VERIFICAR MAPA (validador do padrão) ════════════════════
+function checkMap(){
+  const body=document.getElementById('mv-body');
+  const concs=nodes.filter(n=>n.type!=='detalhe');
+  const dets=nodes.filter(n=>n.type==='detalhe');
+  const connected=new Set();edges.forEach(e=>{connected.add(e.source);connected.add(e.target);});
+  const targets=new Set();edges.forEach(e=>targets.add(e.target));
+  const unl=edges.filter(e=>!e.label||!e.label.trim());          // setas sem rótulo
+  const loose=nodes.filter(n=>!connected.has(n.id));             // nós soltos
+  const longc=concs.filter(n=>conceptTooLong(n.label));          // conceitos-frase
+  const roots=concs.filter(n=>connected.has(n.id)&&!targets.has(n.id)); // topos
+  const detParents=dets.filter(n=>edges.some(e=>e.source===n.id));// detalhe com filhos
+  const cut=s=>esc(s.length>44?s.slice(0,44)+'…':s);
+  const list=arr=>'<ul>'+arr.slice(0,12).map(n=>'<li>'+cut(n.label)+'</li>').join('')+(arr.length>12?'<li>… +'+(arr.length-12)+'</li>':'')+'</ul>';
+  let html='';
+  if(!nodes.length){
+    html='<div class="vr warn"><b>Mapa vazio</b>Adicione conceitos para começar.</div>';
+  }else{
+    html='<div class="vr"><b>Resumo</b>'+concs.length+' conceito(s) · '+dets.length+' detalhe(s) · '+edges.length+' ligação(ões)</div>';
+    if(unl.length)html+='<div class="vr err"><b>⚠ '+unl.length+' ligação(ões) sem palavra de ligação</b>Toda seta precisa de um rótulo que forme a proposição.</div>';
+    if(longc.length)html+='<div class="vr err"><b>⚠ '+longc.length+' "conceito(s)" que são frases</b>Encurte (máx. '+MAX_CONC_WORDS+' palavras) ou converta em Detalhe/Exemplo.'+list(longc)+'</div>';
+    if(loose.length)html+='<div class="vr err"><b>⚠ '+loose.length+' nó(s) solto(s), sem conexão</b>'+list(loose)+'</div>';
+    if(detParents.length)html+='<div class="vr warn"><b>⚠ '+detParents.length+' Detalhe/Exemplo com setas saindo</b>Detalhes devem ser pontas finais, não origem.'+list(detParents)+'</div>';
+    if(roots.length>1)html+='<div class="vr warn"><b>⚠ '+roots.length+' conceitos no topo</b>Um mapa conceitual normalmente parte de 1 conceito mais geral. Verifique a hierarquia.'+list(roots)+'</div>';
+    if(!unl.length&&!longc.length&&!loose.length&&!detParents.length&&roots.length<=1)
+      html+='<div class="vr ok"><b>✓ Tudo dentro do padrão</b>Hierarquia, proposições e conceitos OK.</div>';
+  }
+  body.innerHTML=html;
+  document.getElementById('mv').style.display='flex';
+}
+document.getElementById('b-check').onclick=checkMap;
+document.getElementById('mv-close').onclick=()=>document.getElementById('mv').style.display='none';
+document.getElementById('mv').addEventListener('click',e=>{if(e.target===document.getElementById('mv'))document.getElementById('mv').style.display='none';});
 // ═══ KEYBOARD ════════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
   const tag=document.activeElement.tagName;if(tag==='INPUT'||tag==='TEXTAREA')return;
@@ -823,7 +936,7 @@ function fitToScreen(){
 // ═══ SAVE / LOAD ═════════════════════════════════════════════
 document.getElementById('b-save').onclick=()=>{const b=new Blob([JSON.stringify({nodes,edges,nid,eid,v:5},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mapa-conceitual.json';a.click();toast_('Projeto salvo ✓');};
 document.getElementById('b-open').onclick=()=>document.getElementById('fi').click();
-document.getElementById('fi').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);nodes=d.nodes||[];edges=d.edges||[];nid=d.nid||(nodes.length?Math.max(...nodes.map(n=>n.id))+1:1);eid=d.eid||(edges.length?Math.max(...edges.map(e=>e.id))+1:1);sel=null;hist=[];renderAll();fitToScreen();toast_('Carregado ✓');}catch{toast_('Erro ao carregar');}};r.readAsText(f);e.target.value='';});
+document.getElementById('fi').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);nodes=d.nodes||[];edges=d.edges||[];nodes.forEach(n=>{if(!n.type)n.type='conceito';});nid=d.nid||(nodes.length?Math.max(...nodes.map(n=>n.id))+1:1);eid=d.eid||(edges.length?Math.max(...edges.map(e=>e.id))+1:1);sel=null;hist=[];renderAll();fitToScreen();toast_('Carregado ✓');}catch{toast_('Erro ao carregar');}};r.readAsText(f);e.target.value='';});
 // ═══ EXPORT ══════════════════════════════════════════════════
 function getMapCanvas(scale=2.5){
   return new Promise(resolve=>{
@@ -974,6 +1087,7 @@ document.getElementById('b-pdf').onclick=async()=>{
   pdf.addImage(c.toDataURL('image/png'),'PNG',0,0,W,H);pdf.save('mapa-conceitual.pdf');
 };
 // ═══ INIT ════════════════════════════════════════════════════
+/* padrão de mapa conceitual: guarda-corpos ativos */
 buildMarkers();
 (()=>{const r=svg.getBoundingClientRect();pan={x:r.width/2,y:r.height/2};setT();hideHint();})();
 </script>
